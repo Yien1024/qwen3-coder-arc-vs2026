@@ -1,0 +1,17 @@
+# runtime artefacts — never commit these
+*.log
+__pycache__/
+*.pyc
+*.bak-*
+
+# model weights must never end up in git
+*.gguf
+*.safetensors
+*.bin
+
+# local environments / editor state
+.venv/
+venv/
+.vs/
+.vscode/
+.idea/

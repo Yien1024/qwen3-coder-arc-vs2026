@@ -1,0 +1,27 @@
+# STEP 2 of 2 — layer the official sampling parameters onto the imported model.
+#
+# Values are copied verbatim from the Qwen3-Coder-30B-A3B-Instruct model card,
+# "Best Practices" section:
+#     temperature=0.7, top_p=0.8, top_k=20, repetition_penalty=1.05
+# The card recommends an output length of 65536 for most queries; 8192 is plenty
+# for chat replies and keeps responses snappy.
+#
+#   ollama create qwen3-coder:30b -f models/Modelfile.qwen3-coder-30b-tuned
+#   ollama show qwen3-coder:30b --parameters      # must list all five
+#
+# This reuses the existing blob - it does NOT copy the 17 GB of weights again
+# (the create log says "using existing layer sha256:...").
+#
+# Deliberately NOT set here:
+#   num_ctx  - would override the global OLLAMA_CONTEXT_LENGTH (see README)
+#   TEMPLATE - would override Ollama's built-in qwen3-coder renderer; the working
+#              chat + tool-call template comes from the GGUF itself
+#
+# Side effect worth knowing: re-creating a tag makes Ollama swap the runner, and
+# one or two requests can fail with HTTP 400 in that window. Retry once.
+FROM qwen3-coder:30b
+PARAMETER temperature 0.7
+PARAMETER top_p 0.8
+PARAMETER top_k 20
+PARAMETER repeat_penalty 1.05
+PARAMETER num_predict 8192

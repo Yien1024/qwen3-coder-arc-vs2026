@@ -1,0 +1,10 @@
+# The small second model. Handy for quick questions and for testing the proxy
+# without waiting on the 30B.
+#
+# Note: Qwen3-4B is a THINKING model (ollama show reports "thinking" in its
+# capabilities), unlike Qwen3-Coder. Its reasoning arrives in a separate
+# "reasoning" field, and if the output budget is too small the answer field
+# comes back EMPTY. Keep num_predict generous if you drive it from code.
+#
+#   ollama create qwen3:4b-local -f models/Modelfile.qwen3-4b
+FROM C:\path\to\Qwen3-4B-Q4_K_M.gguf

@@ -1,0 +1,12 @@
+# STEP 1 of 2 — import a downloaded GGUF as a local Ollama model.
+#
+# Ollama's registry does not carry the IQ4_NL quantisation of this model, so we
+# import the GGUF by hand. Point FROM at wherever your .gguf actually lives.
+#
+#   ollama create qwen3-coder:30b -f models/Modelfile.import-from-gguf
+#
+# Verify:  ollama list          -> should show ~17 GB
+#          ollama ps            -> PROCESSOR should read "100% GPU"
+#
+# Do NOT add PARAMETER lines here; step 2 layers them on top.
+FROM C:\path\to\Qwen3-Coder-30B-A3B-Instruct-IQ4_NL.gguf
