@@ -1,0 +1,123 @@
+name: Bug 报告
+description: 出问题了？填这个。带 * 的是必填，其余能填就填
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        先说一句：这个项目是在 Windows + Intel Arc 上开发和验证的，环境差异非常大。
+        下面这些信息填全了，大多数问题我能直接复现；只写一句"不工作"的话，我基本只能猜。
+
+        ⚠️ **贴日志之前请先删掉个人内容。** 代理日志里会带上你真实的提问，可能包含
+        公司代码、内部地址之类的东西。把不相关的部分删掉再贴。
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 卡在哪一步？
+      description: 这是最有用的一个信息。不确定的话，选最接近的那个。
+      options:
+        - 代理起不来 / 端口不通
+        - VS 里能聊天，但从来不联网
+        - 联网了，但搜索结果不相关
+        - 注入了搜索结果，但模型无视它
+        - 模型输出异常（空白 / 乱码 / 被截断 / 答非所问）
+        - 工具调用（Tool Calling）相关
+        - 模型加载 / 显存 / GPU 占用
+        - 其它
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 具体发生了什么
+      description: 你输入了什么、期望什么、实际看到什么。有报错原文就贴原文。
+      placeholder: |
+        我问了"React 19 有哪些新特性"，期望它联网，
+        结果日志里只有 POST /v1/chat/completions，没有任何 search 行。
+    validations:
+      required: true
+
+  - type: input
+    id: base-url
+    attributes:
+      label: VS 里 Base URL 填的是什么？
+      description: 这一项请务必照实填。填成 11434 是最常见的坑，聊天一切正常但永远不联网。
+      placeholder: http://127.0.0.1:11435/v1
+    validations:
+      required: true
+
+  - type: input
+    id: health-check
+    attributes:
+      label: 代理健康检查的结果
+      description: 把下面这条命令的输出贴上来。200 表示代理在正常转发。
+      placeholder: 'curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:11435/v1/models'
+    validations:
+      required: true
+
+  - type: textarea
+    id: ollama-ps
+    attributes:
+      label: ollama ps 的完整输出
+      description: 跑 `ollama ps` 贴过来，注意 PROCESSOR 那一列是 100% GPU 还是 CPU/GPU 混合。
+      render: text
+      placeholder: |
+        NAME               ID              SIZE     PROCESSOR    CONTEXT    UNTIL
+        qwen3-coder:30b    cc7437df24ee    20 GB    100% GPU     65536      Forever
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 版本信息（四条都贴一下）
+      description: Arc 上驱动版本影响很大，VS 是 Insiders 还是正式版也很关键。
+      render: text
+      placeholder: |
+        Ollama       : ollama version is 0.35.1
+        显卡 / 驱动   : Arc Pro B60 24G + A750 8G，驱动 32.0.101.xxxx
+        Windows      : Windows 11 24H2 (26100.x)
+        VS2026       : Insiders 18.0.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: model-params
+    attributes:
+      label: 模型的采样参数
+      description: 跑 `ollama show 你的模型名 --parameters`。如果输出是空的，说明采样参数没叠上去。
+      render: text
+      placeholder: |
+        top_k                          20
+        top_p                          0.8
+        temperature                    0.7
+    validations:
+      required: false
+
+  - type: textarea
+    id: proxy-log
+    attributes:
+      label: 代理日志片段
+      description: '文件在 ollama-proxy.py 同目录的 ollama-proxy.log。贴出问题那几行就够，不用全贴。记得先删个人内容。'
+      render: text
+      placeholder: |
+        [proxy 2026-10-06 02:09:22] search query (extracted): React 19 有哪些新特性
+        [proxy 2026-10-06 02:09:22] search: engine=bing raw=8 kept=4 thr=0.30 realtime=False weak=False
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前自检
+      options:
+        - label: 我确认 VS 里的 Base URL 用的是 11435，不是 11434
+          required: true
+        - label: 我已经把日志里的个人内容删掉了
+          required: true
+        - label: 我先看过 README 第 8 节的排障清单了
+          required: true
+        - label: 我搜过已有的 issue，没有重复
+          required: true

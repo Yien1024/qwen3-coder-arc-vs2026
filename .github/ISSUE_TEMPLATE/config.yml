@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 排障清单（先看这个）
+    url: https://github.com/Yien1024/qwen3-coder-arc-vs2026#8-踩过的坑
+    about: 八个常见问题在这儿都有答案，尤其是"VS 里聊天正常但从来不联网"
+
+  - name: 实测数据与测法
+    url: https://github.com/Yien1024/qwen3-coder-arc-vs2026/blob/main/docs/BENCHMARKS.md
+    about: 性能数字是怎么测的，以及哪些数字不能当规格看
+
+  - name: 两轮体检记录
+    url: https://github.com/Yien1024/qwen3-coder-arc-vs2026/blob/main/docs/AUDIT.md
+    about: 发现了什么问题、怎么修的、我自己判断错过什么
