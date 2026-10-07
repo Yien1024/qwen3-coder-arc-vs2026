@@ -1,0 +1,43 @@
+# Continue 配置示例：让编辑器直接跟本机的模型说话，不经过任何云端。
+#
+# 用法：把这份文件复制到
+#   Windows: C:\Users\<你的用户名>\.continue\config.yaml
+#   macOS/Linux: ~/.continue/config.yaml
+#
+# 前提是代理已经起来了（scripts/start-proxy.ps1 或 start-proxy-hidden.vbs）。
+# 代理会把联网搜索的结果自动带进对话，Continue 这边不需要再配搜索。
+#
+# 如果你的 Continue 版本用的是 config.json 而不是 config.yaml，
+# 就直接在它界面上「添加模型」，填这四个值：
+#     Provider = OpenAI 兼容
+#     Base URL = http://127.0.0.1:11435/v1
+#     API Key  = local      （本地代理不校验，填个非空的即可）
+#     Model    = qwen3-coder:30b
+
+name: Local Qwen3-Coder
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Qwen3-Coder 30B (local)
+    provider: openai
+    model: qwen3-coder:30b
+    apiBase: http://127.0.0.1:11435/v1
+    apiKey: local
+    roles:
+      - chat
+      - edit
+      - apply
+    # 故意设成 32K，不是 65536。两个原因：
+    #   1) 代理注入检索结果后总量还会再涨几百到两千 tokens。填满 65536 会被顶出
+    #      上下文窗口，Ollama 会直接回 HTTP 400 exceed_context_size_error；
+    #   2) prompt 越大越慢 —— 实测 38K tokens 的一次请求要 248 秒。
+    # 这行如果报未知字段，删掉也能用，只是 Continue 可能按默认值塞太多上下文。
+    contextLength: 32768
+
+# 想要行内补全（Tab 补全）的话，再挂一个小模型，比如：
+#   tabAutocompleteModel:
+#     provider: openai
+#     model: qwen3:4b-local
+#     apiBase: http://127.0.0.1:11435/v1
+#     apiKey: local

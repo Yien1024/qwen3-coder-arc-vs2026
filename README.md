@@ -1,7 +1,7 @@
 <!-- badges -->
 ![platform](https://img.shields.io/badge/platform-Windows%2011-0078D4?logo=windows&logoColor=white)
 ![GPU](https://img.shields.io/badge/GPU-Intel%20Arc-0068B5?logo=intel&logoColor=white)
-![ollama](https://img.shields.io/badge/Ollama-0.35.1-black)
+![ollama](https://img.shields.io/badge/Ollama-0.35.1%2B-black)
 ![python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![deps](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -152,6 +152,7 @@ VS2026 (BYOM) ──► 127.0.0.1:11435  ollama-proxy.py
 | `models/Modelfile.qwen3-4b` | 4B 小模型 |
 | `docs/BENCHMARKS.md` | 所有实测数字、测法，以及哪些数字不能当规格看 |
 | `docs/AUDIT.md` | 两轮体检记录：发现了什么、怎么修的、我自己判断错过什么 |
+| `clients/continue/config.yaml` | Continue 的配置示例。不想依赖 GitHub Copilot 云端的话用它，见第 4 节第 5b 步 |
 
 ## 4. 一步步装起来
 
@@ -159,7 +160,8 @@ VS2026 (BYOM) ──► 127.0.0.1:11435  ollama-proxy.py
 
 - Windows 11
 - Intel Arc 显卡（我用的是 Arc Pro B60 24G 推理，A750 8G 负责显示）
-- [Ollama 官方版](https://ollama.com/download)，我验证的是 0.35.1
+- [Ollama 官方版](https://ollama.com/download)。完整那套测试是在 0.35.1 上做的，
+  0.40.0 上补做了一轮基本功能验证（26 个工具的请求正常，7.7 秒）
 - Python 3.11+，要在 PATH 里
 - Visual Studio 2026 Insiders，BYOM 需要比较新的版本
 - 内存建议 32G 以上，我这台是 48G
@@ -307,6 +309,35 @@ Max Input Tokens 填 61440 而不是 65536，是因为模型的 `num_ctx` 正好
 
 配置落在哪个文件里，可以直接打开看：
 `%LOCALAPPDATA%\Microsoft\VisualStudio\Copilot\BringYourOwnModel\ConfiguredBringYourOwnModel_v2.json`
+
+### 5b. 如果 Copilot 面板一直转圈（校园网 / 公司内网）
+
+先说一个反直觉的事实：**BYOM 不等于脱网。**
+
+模型确实跑在你本机，但 VS 的 Copilot 聊天面板本身仍然要连 `api.githubcopilot.com`：
+拉特性开关、校验授权、初始化会话。这些域名一旦连不上，面板会一直转圈，
+**而你的本地模型一个请求都收不到。**
+
+我在校园网环境下实测过：
+
+| 域名 | 结果 |
+|---|---|
+| `api.githubcopilot.com` | 超时 |
+| `proxy.individual.githubcopilot.com` | 超时 |
+| `api.github.com` | 通（被本机的加速工具劫持到了 127.0.0.1） |
+
+症状很好认：**代理日志里完全看不到 VS 发来的聊天请求**，只有偶尔一条查模型列表的。
+（代理日志现在带时间戳，一眼就能看出来。）
+
+如果你正好在这种网络里，别跟它纠缠，直接换个不依赖 Copilot 云的客户端。
+这个仓库的代理就是标准 OpenAI 端点，任何支持自定义地址的插件都能直接接：
+
+1. VS 里打开 **扩展 → 管理扩展**，搜 **Continue**，装上并重启 VS；
+2. 把 `clients/continue/config.yaml` 复制到 `C:\Users\<你的用户名>\.continue\config.yaml`；
+3. 在 Continue 侧边栏选中 `Qwen3-Coder 30B (本地)`，开始聊。
+
+不需要 GitHub 账号，不需要 Copilot 订阅，也不看校园网的脸色。
+配置里 `contextLength` 特意写成 32768 而不是 65536，原因在文件注释里。
 
 ### 6. 后台静默启动
 
@@ -489,6 +520,15 @@ VS 以为自己只是在跟一个普通模型说话。
 **抓网页卡住不动。**
 `urlopen` 的 timeout 不覆盖 DNS 解析，我实测有个 URL 挂了 145 秒才返回。
 代码已经用线程池给抓取加了 8 秒硬超时，嫌短就改 `FETCH_DEADLINE_S`。
+
+**Copilot 聊天面板一直转圈，本地模型收不到任何请求。**
+
+先看代理日志。如果连 `POST /v1/chat/completions` 都没有，那就不是模型的问题，
+是 VS 的聊天面板卡在初始化了。
+
+BYOM 只换掉了答题的那个模型，没有去掉面板对 `api.githubcopilot.com` 的依赖。
+校园网、公司内网，或者任何限制境外访问的网络都会触发这个。
+排查和解决办法见第 4 节第 5b 步。
 
 ## 9. 现在还不行的地方
 

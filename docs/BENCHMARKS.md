@@ -12,7 +12,7 @@ README 里那些数字是怎么测出来的，以及哪些数字不能当规格�
 | 显示 GPU | Intel Arc A750 8G |
 | 内存 | 48 GB |
 | 系统 | Windows 11 |
-| Ollama | 0.35.1，官方版 |
+| Ollama | 0.35.1，官方版（下面所有数字都是这个版本上测的） |
 | 模型 | `qwen3-coder:30b`，Qwen3-Coder-30B-A3B-Instruct，IQ4_NL，17.3 GB |
 | 上下文 | `OLLAMA_CONTEXT_LENGTH=65536`，`OLLAMA_KV_CACHE_TYPE=q8_0` |
 | 常驻 | `OLLAMA_KEEP_ALIVE=-1` |
