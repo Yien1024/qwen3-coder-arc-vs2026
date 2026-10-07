@@ -74,8 +74,8 @@ Intel 自家的 IPEX-LLM 在 Arc 上确实更快，我认真考虑过。最后�
 ## 2. 它能干什么
 
 - **零依赖**。纯 Python 标准库，没有 `requirements.txt`，不用 pip install，不用申请 API key。
-- **对客户端零改动**。它就是个 OpenAI 兼容端点。VS2026 的 BYOM、Continue、Cline，
-  甚至一条 `curl` 都能直接接，不需要装任何插件。
+- **对客户端零改动**。它就是个 OpenAI 兼容端点。VS2026 的 BYOM、VS Code 里的 Continue 和
+  Cline、甚至一条 `curl` 都能直接接，不需要装任何插件。
 - **按需联网，不是每次都搜**。纯概念题、纯代码题、以及"继续""好的"这种话都直接跳过。
   白搜一次要 11 秒加 1500 tokens 上下文，跳过就是白省。
 - **检索词用报错原文**。不把整句话丢给搜索引擎。同一道题，整句检索 0/5 相关，抽原文 5/5 正解。
@@ -152,7 +152,8 @@ VS2026 (BYOM) ──► 127.0.0.1:11435  ollama-proxy.py
 | `models/Modelfile.qwen3-4b` | 4B 小模型 |
 | `docs/BENCHMARKS.md` | 所有实测数字、测法，以及哪些数字不能当规格看 |
 | `docs/AUDIT.md` | 两轮体检记录：发现了什么、怎么修的、我自己判断错过什么 |
-| `clients/continue/config.yaml` | Continue 的配置示例。不想依赖 GitHub Copilot 云端的话用它，见第 4 节第 5b 步 |
+| `clients/continue/config.yaml` | Continue 的配置示例。**注意 Continue 只有 VS Code 和 JetBrains 版，Visual Studio 里装不了** |
+| `docs/RESTRICTED-NETWORK.md` | 校园网 / 受限网络的实测记录：为什么 Copilot 用不了、GitHub 加速器为什么救不了、Copilot 每次请求有多重 |
 
 ## 4. 一步步装起来
 
@@ -329,15 +330,23 @@ Max Input Tokens 填 61440 而不是 65536，是因为模型的 `num_ctx` 正好
 症状很好认：**代理日志里完全看不到 VS 发来的聊天请求**，只有偶尔一条查模型列表的。
 （代理日志现在带时间戳，一眼就能看出来。）
 
-如果你正好在这种网络里，别跟它纠缠，直接换个不依赖 Copilot 云的客户端。
-这个仓库的代理就是标准 OpenAI 端点，任何支持自定义地址的插件都能直接接：
+如果你正好在这种网络里，**先说清楚：换客户端这件事比听起来难。** 我把试过的路都列出来，
+免得你再走一遍：
 
-1. VS 里打开 **扩展 → 管理扩展**，搜 **Continue**，装上并重启 VS；
-2. 把 `clients/continue/config.yaml` 复制到 `C:\Users\<你的用户名>\.continue\config.yaml`；
-3. 在 Continue 侧边栏选中 `Qwen3-Coder 30B (本地)`，开始聊。
+| 方案 | 结果 |
+|---|---|
+| **Continue** | 只有 VS Code 和 JetBrains 版，**Visual Studio 里装不了**（扩展市场搜「Continue」搜出来的是别的东西） |
+| **Local LLM Chat for Visual Studio** | 有 VS 版，但版本声明是 `[17.0, 18.0)`，**装不进 VS2026**（18.x）。改 VSIX 里的版本声明能硬装上，菜单也出得来，但**实测会让 VS2026 卡死**，不建议 |
+| **Fitten Code**（国内厂商，已装在 VS 里） | 能正常工作，但模型锁在它自己的云端，**不支持自定义本地地址** |
+| 直接用 `curl` 或自己写脚本 | 能用，但不是编辑器里的体验 |
 
-不需要 GitHub 账号，不需要 Copilot 订阅，也不看校园网的脸色。
-配置里 `contextLength` 特意写成 32768 而不是 65536，原因在文件注释里。
+**所以：想在 VS2026 里用本地模型、同时完全不依赖 Copilot 的云，目前没有可靠的现成方案。**
+受限网络下更实际的选择是用国内厂商的编程助手，它们的服务器在国内，校园网直接可达。
+
+这个仓库的代理仍然是标准 OpenAI 端点，`clients/continue/config.yaml` 对 **VS Code 用户**可用。
+
+至于 Copilot 本身在受限网络里的表现、以及为什么 GitHub 加速器救不了它，见
+[docs/RESTRICTED-NETWORK.md](docs/RESTRICTED-NETWORK.md)。
 
 ### 6. 后台静默启动
 
@@ -528,7 +537,16 @@ VS 以为自己只是在跟一个普通模型说话。
 
 BYOM 只换掉了答题的那个模型，没有去掉面板对 `api.githubcopilot.com` 的依赖。
 校园网、公司内网，或者任何限制境外访问的网络都会触发这个。
-排查和解决办法见第 4 节第 5b 步。
+完整实测和原因见 [docs/RESTRICTED-NETWORK.md](docs/RESTRICTED-NETWORK.md)。
+
+**Copilot 连上了，但每句话要等半分钟。**
+
+这是它的设计，不是模型慢。实测它每次请求带 25,493 字符的系统提示和 29 个工具定义，
+换算成 17,693 个 prompt token。第一次 88 秒，之后靠 Ollama 的前缀缓存降到 38 到 48 秒。
+
+关掉 BYOM 里的 Tool Calling 能砍掉大部分（那 29 个工具定义约 4,700 tokens，而且是每次都要
+重算的部分），但那样 Copilot 就不能自己读文件、改代码、跑构建了，等于丢掉用它的主要理由。
+数字和取舍同样在 [docs/RESTRICTED-NETWORK.md](docs/RESTRICTED-NETWORK.md)。
 
 ## 9. 现在还不行的地方
 
